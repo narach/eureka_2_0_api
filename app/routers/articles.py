@@ -1,12 +1,36 @@
 import httpx
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.models import ArticleUploadRequest, ArticleUploadResponse
+from app.models import ArticleUploadRequest, ArticleUploadResponse, ArticleListResponse, ArticleListItem
 from app.db.base import get_db
+from app.db.models import Article
 from app.services.article_service import ArticleService
 
 router = APIRouter()
 article_service = ArticleService()
+
+
+@router.get("", response_model=ArticleListResponse)
+def get_articles(
+    db: Session = Depends(get_db),
+):
+    """
+    Fetch all available articles from the database.
+    
+    Returns a list of articles with only id, title, and url (content is excluded).
+    """
+    articles = db.query(Article).all()
+    
+    article_items = [
+        ArticleListItem(
+            id=article.id,
+            title=article.title or "Untitled Article",
+            url=article.url,
+        )
+        for article in articles
+    ]
+    
+    return ArticleListResponse(articles=article_items)
 
 
 @router.post("/upload", response_model=ArticleUploadResponse)

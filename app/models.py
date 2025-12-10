@@ -92,3 +92,16 @@ class HypothesisCreationResponse(BaseModel):
         description="List of URLs that failed to process or validate",
     )
 
+
+class ArticleListItem(BaseModel):
+    id: int = Field(..., description="Article ID")
+    title: str = Field(..., description="Article title")
+    url: str = Field(..., description="Article URL")
+
+
+class ArticleListResponse(BaseModel):
+    articles: List[ArticleListItem] = Field(
+        ...,
+        description="List of all available articles (without content)",
+    )
+
