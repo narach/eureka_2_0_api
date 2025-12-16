@@ -1,7 +1,11 @@
 import httpx
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.models import HypothesisValidationRequest, HypothesisValidationResponse
+from app.models import (
+    HypothesisValidationRequest,
+    HypothesisValidationResponse,
+    HypothesisValidationByArticleIdRequest,
+)
 from app.db.base import get_db
 from app.services.validation_service import ValidationService
 
@@ -48,6 +52,46 @@ async def validate_hypothesis(
         )
     except Exception as e:
         # For other errors, still return 500 but with the actual error message
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+
+
+@router.post("/validate_by_article_id", response_model=HypothesisValidationResponse)
+async def validate_hypothesis_by_article_id(
+    request: HypothesisValidationByArticleIdRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Validates a life science article against a hypothesis using article ID.
+    
+    - **hypothesis**: The hypothesis to validate
+    - **article_id**: ID of the article to validate (must exist in the database)
+    
+    Returns analytics result with relevancy, key takeaways, and validity scores.
+    Uses database caching to avoid re-validating hypotheses.
+    The article content is extracted from the database using the article ID.
+    """
+    try:
+        result = await validation_service.validate_hypothesis_by_article_id(
+            db=db,
+            hypothesis_title=request.hypothesis,
+            article_id=request.article_id,
+        )
+        
+        return HypothesisValidationResponse(result=result)
+    
+    except HTTPException:
+        raise
+    except ValueError as e:
+        # Validation errors (e.g., article not found, no content)
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+    except Exception as e:
+        # For other errors, return 500 with the actual error message
         raise HTTPException(
             status_code=500,
             detail=str(e),

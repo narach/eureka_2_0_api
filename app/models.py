@@ -7,6 +7,11 @@ class HypothesisValidationRequest(BaseModel):
     article_url: HttpUrl = Field(..., description="URL of the article to validate")
 
 
+class HypothesisValidationByArticleIdRequest(BaseModel):
+    hypothesis: str = Field(..., description="The hypothesis to validate against the article")
+    article_id: int = Field(..., description="ID of the article to validate")
+
+
 class AnalyticsResult(BaseModel):
     relevancy: float = Field(
         ...,
@@ -32,28 +37,30 @@ class HypothesisValidationResponse(BaseModel):
 
 
 class ArticleUploadRequest(BaseModel):
-    article_urls: List[HttpUrl] = Field(
-        ...,
-        description="Array of article URLs to upload",
-        min_length=1,
+    url: str = Field(..., description="Article URL")
+    title: str | None = Field(default=None, description="Article title")
+    topic: str | None = Field(
+        default=None,
+        description="Topic in format 'main_item - secondary_item'. If provided, main_item and secondary_item will be populated automatically.",
+    )
+    main_item: str | None = Field(
+        default=None,
+        description="Main item. If provided along with secondary_item, topic will be populated automatically.",
+    )
+    secondary_item: str | None = Field(
+        default=None,
+        description="Secondary item. If provided along with main_item, topic will be populated automatically.",
     )
 
 
 class ArticleUploadResponse(BaseModel):
-    uploaded_articles_amount: int = Field(
-        ...,
-        ge=0,
-        description="Number of successfully uploaded articles",
-    )
-    failed_articles_amount: int = Field(
-        ...,
-        ge=0,
-        description="Number of articles that failed to upload",
-    )
-    failed_articles: List[str] = Field(
-        ...,
-        description="List of URLs that failed to upload",
-    )
+    id: int = Field(..., description="ID of the uploaded article")
+    url: str = Field(..., description="Article URL")
+    title: str | None = Field(default=None, description="Article title")
+    topic: str | None = Field(default=None, description="Article topic")
+    main_item: str | None = Field(default=None, description="Main item")
+    secondary_item: str | None = Field(default=None, description="Secondary item")
+    message: str = Field(..., description="Status message")
 
 
 class HypothesisCreationRequest(BaseModel):
@@ -97,6 +104,9 @@ class ArticleListItem(BaseModel):
     id: int = Field(..., description="Article ID")
     title: str = Field(..., description="Article title")
     url: str = Field(..., description="Article URL")
+    topic: str | None = Field(default=None, description="Article topic")
+    main_item: str | None = Field(default=None, description="Main item")
+    secondary_item: str | None = Field(default=None, description="Secondary item")
 
 
 class ArticleListResponse(BaseModel):
@@ -105,3 +115,68 @@ class ArticleListResponse(BaseModel):
         description="List of all available articles (without content)",
     )
 
+
+class ArticleBatchUploadResponse(BaseModel):
+    uploaded_articles: int = Field(
+        ...,
+        ge=0,
+        description="Number of successfully uploaded articles",
+    )
+    failed_articles: int = Field(
+        ...,
+        ge=0,
+        description="Number of articles that failed to upload",
+    )
+
+
+class ArticleSearchItem(BaseModel):
+    id: int = Field(..., description="Article ID")
+    title: str = Field(..., description="Article title")
+    url: str = Field(..., description="Article URL")
+    topic: str | None = Field(default=None, description="Article topic")
+    research_id: int | None = Field(default=None, description="Research ID")
+
+
+class ArticleSearchResponse(BaseModel):
+    articles: List[ArticleSearchItem] = Field(
+        ...,
+        description="List of articles matching the search criteria",
+    )
+
+
+class EntityTypeItem(BaseModel):
+    id: int = Field(..., description="Entity type ID")
+    name: str = Field(..., description="Entity type name")
+
+
+class EntityTypeListResponse(BaseModel):
+    entity_types: List[EntityTypeItem] = Field(
+        ...,
+        description="List of all available entity types",
+    )
+
+
+class ResearchItem(BaseModel):
+    id: int = Field(..., description="Research ID")
+    primary_item: str = Field(..., description="Primary item")
+    secondary_item: str = Field(..., description="Secondary item")
+
+
+class ResearchListResponse(BaseModel):
+    researches: List[ResearchItem] = Field(
+        ...,
+        description="List of all available researches",
+    )
+
+
+class ResearchSearchItem(BaseModel):
+    id: int = Field(..., description="Research ID")
+    primary_item: str = Field(..., description="Primary item")
+    secondary_item: str = Field(..., description="Secondary item")
+
+
+class ResearchSearchResponse(BaseModel):
+    researches: List[ResearchSearchItem] = Field(
+        ...,
+        description="List of researches matching the search criteria",
+    )

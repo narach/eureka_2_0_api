@@ -1,6 +1,6 @@
 import logging
 from fastapi import FastAPI
-from app.routers import validation, articles, hypotheses
+from app.routers import validation, articles, hypotheses, entity_types, researches
 
 # Configure logging
 logging.basicConfig(
@@ -17,6 +17,8 @@ app = FastAPI(
 app.include_router(validation.router, prefix="/api/v1", tags=["validation"])
 app.include_router(articles.router, prefix="/api/v1/articles", tags=["articles"])
 app.include_router(hypotheses.router, prefix="/api/v1/hypotheses", tags=["hypotheses"])
+app.include_router(entity_types.router, prefix="/api/v1/entity_types", tags=["entity_types"])
+app.include_router(researches.router, prefix="/api/v1/researches", tags=["researches"])
 
 
 @app.get("/")

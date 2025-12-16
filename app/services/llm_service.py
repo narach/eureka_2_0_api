@@ -84,8 +84,6 @@ Please analyze the article and provide your assessment in the JSON format specif
         Search for relevant PubMed articles using LLM.
         Returns a list of article URLs from PubMed/PMC sources only.
         """
-        logger.debug(f"Searching for {articles_amount} PubMed articles for hypothesis: {hypothesis[:100]}")
-        
         # Extract key terms and provide specific examples based on hypothesis
         hypothesis_lower = hypothesis.lower()
         
@@ -121,10 +119,6 @@ Return JSON with {articles_amount} PMC article URLs:
 Return {articles_amount} URLs now."""
 
         try:
-            logger.debug(f"Sending request to LLM with model: {self.config.openai_model}")
-            logger.debug(f"System prompt length: {len(system_prompt)}")
-            logger.debug(f"User prompt length: {len(user_prompt)}")
-            
             response = await self.client.chat.completions.create(
                 model=self.config.openai_model,
                 messages=[
@@ -140,9 +134,6 @@ Return {articles_amount} URLs now."""
             if not result_text:
                 logger.error("LLM returned empty response for article search")
                 raise Exception("LLM returned empty response")
-            
-            logger.debug(f"LLM search response (full): {result_text}")
-            logger.debug(f"LLM search response (first 500 chars): {result_text[:500]}")
             
             # Parse JSON response
             result_dict = json.loads(result_text)
@@ -164,7 +155,6 @@ Return {articles_amount} URLs now."""
             
             # Ensure it's a list
             if not isinstance(urls, list):
-                logger.warning(f"Unexpected response format from LLM: {type(urls)}, value: {urls}")
                 urls = []
             
             # Filter to only PMC/PubMed URLs
@@ -174,25 +164,15 @@ Return {articles_amount} URLs now."""
                 if "pmc.ncbi.nlm.nih.gov" in url_str or "pubmed.ncbi.nlm.nih.gov" in url_str:
                     filtered_urls.append(url_str)
             
-            logger.debug(f"Found {len(filtered_urls)} valid PubMed/PMC URLs out of {len(urls)} total")
-            
             # If no URLs found, use known URLs as fallback
             if not filtered_urls:
-                logger.warning(
-                    f"LLM returned no valid URLs. Raw response: {result_text}, "
-                    f"Parsed dict: {result_dict}, "
-                    f"Dict keys: {list(result_dict.keys()) if isinstance(result_dict, dict) else 'N/A'}. "
-                    f"Using known URLs as fallback."
-                )
                 if known_urls:
-                    logger.info(f"Using {min(articles_amount, len(known_urls))} known URLs as fallback")
                     return known_urls[:articles_amount]
                 logger.error("No URLs found and no known URLs available as fallback")
                 return []
             
             # If we got some URLs but need more, supplement with known URLs
             if len(filtered_urls) < articles_amount and known_urls:
-                logger.debug(f"Got {len(filtered_urls)} URLs from LLM, supplementing with known URLs")
                 # Add known URLs that aren't already in the list
                 for known_url in known_urls:
                     if known_url not in filtered_urls and len(filtered_urls) < articles_amount:
@@ -204,14 +184,12 @@ Return {articles_amount} URLs now."""
             logger.error(f"Failed to parse LLM response as JSON: {str(e)}")
             # Use known URLs as fallback if JSON parsing fails
             if known_urls:
-                logger.info(f"Using {min(articles_amount, len(known_urls))} known URLs as fallback after JSON parse error")
                 return known_urls[:articles_amount]
             raise Exception(f"Failed to parse article search results: {str(e)}")
         except Exception as e:
             logger.error(f"LLM article search failed: {str(e)}")
             # Use known URLs as fallback if any error occurs
             if known_urls:
-                logger.info(f"Using {min(articles_amount, len(known_urls))} known URLs as fallback after error")
                 return known_urls[:articles_amount]
             raise Exception(f"LLM article search failed: {str(e)}")
 
