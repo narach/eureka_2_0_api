@@ -6,10 +6,9 @@ from app.models import (
     ArticleUploadRequest,
     ArticleUploadResponse,
     ArticleListResponse,
-    ArticleListItem,
+    ArticleItem,
     ArticleBatchUploadResponse,
     ArticleSearchResponse,
-    ArticleSearchItem,
 )
 from app.db.base import get_db
 from app.db.models import Article
@@ -28,16 +27,17 @@ def get_articles(
     """
     Fetch all available articles from the database.
     
-    Returns a list of articles with id, title, url, topic, main_item, and secondary_item (content is excluded).
+    Returns a list of articles with id, title, url, topic, research_id, main_item, and secondary_item (content is excluded).
     """
     articles = db.query(Article).all()
     
     article_items = [
-        ArticleListItem(
+        ArticleItem(
             id=article.id,
             title=article.title or "Untitled Article",
             url=article.url,
             topic=article.topic,
+            research_id=article.research_id,
             main_item=article.main_item,
             secondary_item=article.secondary_item,
         )
@@ -77,12 +77,15 @@ async def upload_article(
         )
         
         return ArticleUploadResponse(
-            id=article.id,
-            url=article.url,
-            title=article.title,
-            topic=article.topic,
-            main_item=article.main_item,
-            secondary_item=article.secondary_item,
+            article=ArticleItem(
+                id=article.id,
+                title=article.title or "Untitled Article",
+                url=article.url,
+                topic=article.topic,
+                research_id=article.research_id,
+                main_item=article.main_item,
+                secondary_item=article.secondary_item,
+            ),
             message="Article uploaded successfully",
         )
     
@@ -110,23 +113,28 @@ async def upload_articles_batch(
     """
     Upload multiple articles from an Excel file.
     
-    The Excel file must have the following columns in this exact order:
-    - **Research**: Research ID (mandatory, first column, should reference researches.id)
-    - **Topic**: Article topic (mandatory, can be in format "main_item - secondary_item")
+    The Excel file must have the following columns:
+    - **Research**: Research ID (mandatory, should reference researches.id)
+    - **Topic**: Article topic (mandatory)
     - **Title**: Article title (mandatory)
     - **URL**: Article URL (mandatory)
+    - **Main Item**: Main item (optional, if not provided will be extracted from topic or left empty)
+    - **Secondary Item**: Secondary item (optional, if not provided will be extracted from topic or left empty)
     
     File format:
-    - 1st line: Headers [Research, Topic, Title, URL]
-    - 2nd and subsequent lines: Data [research_id, topic, title, url]
+    - 1st line: Headers [Research, Topic, Title, URL, Main Item, Secondary Item]
+    - 2nd and subsequent lines: Data [research_id, topic, title, url, main_item, secondary_item]
     
-    All 4 fields are mandatory. If any field is missing or invalid, the row will be skipped
-    with a warning logged and processing will continue with the next row.
+    The first 4 fields (Research, Topic, Title, URL) are mandatory. If any of these is missing or invalid, 
+    the row will be skipped with a warning logged and processing will continue with the next row.
+    
+    Main Item and Secondary Item are optional. If provided, they will be used directly. 
+    If not provided, they will be extracted from the topic field (if topic contains "-") or left empty.
     
     Each row will be processed to:
-    1. Validate all 4 fields are present and valid
+    1. Validate all mandatory fields are present and valid
     2. Parse the article content from the URL
-    3. Save the article to the database with the provided research_id, topic, and title
+    3. Save the article to the database with the provided research_id, topic, title, main_item, and secondary_item
     
     If parsing fails for an article, it will be logged but won't stop the batch processing.
     
@@ -178,18 +186,20 @@ def search_articles_by_research(
     """
     Search articles by research_id.
     
-    Returns a list of articles with id, title, url, topic, and research_id.
+    Returns a list of articles with id, title, url, topic, research_id, main_item, and secondary_item.
     """
     try:
         articles = article_service.get_articles_by_research_id(db=db, research_id=research_id)
         
         article_items = [
-            ArticleSearchItem(
+            ArticleItem(
                 id=article.id,
                 title=article.title or "Untitled Article",
                 url=article.url,
                 topic=article.topic,
                 research_id=article.research_id,
+                main_item=article.main_item,
+                secondary_item=article.secondary_item,
             )
             for article in articles
         ]

@@ -42,4 +42,27 @@ class ResearchService:
             primary_item=primary_item,
             secondary_item=secondary_item,
         )
+    
+    @staticmethod
+    def create_research(
+        db: Session,
+        primary_item: str,
+        secondary_item: str,
+    ) -> Research:
+        """
+        Create a new research.
+        
+        Args:
+            db: Database session
+            primary_item: Primary item
+            secondary_item: Secondary item
+            
+        Returns:
+            Created research
+        """
+        return ResearchRepository.create(
+            db=db,
+            primary_item=primary_item,
+            secondary_item=secondary_item,
+        )
 

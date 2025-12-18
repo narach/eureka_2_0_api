@@ -94,9 +94,9 @@ class ArticleRepository:
         Process topic, main_item, and secondary_item fields.
         
         Logic:
-        - If topic is provided, split it by "-" to populate main_item and secondary_item (removing trailing spaces)
-        - If main_item and secondary_item are provided (and topic is not), concatenate them to populate topic
-        - Topic takes precedence: if topic is provided, it will override main_item/secondary_item
+        - If main_item and secondary_item are explicitly provided, use them (don't extract from topic)
+        - If main_item and secondary_item are NOT provided but topic is, split topic to populate them
+        - If topic was not provided but main_item and secondary_item are, concatenate them to populate topic
         
         Returns:
             Tuple of (topic, main_item, secondary_item) with all fields populated
@@ -105,9 +105,8 @@ class ArticleRepository:
         processed_main_item = main_item
         processed_secondary_item = secondary_item
         
-        # If topic is provided, split it to populate main_item and secondary_item
-        # Topic takes precedence over individually provided main_item/secondary_item
-        if processed_topic:
+        # Only extract from topic if main_item and secondary_item are not explicitly provided
+        if processed_topic and processed_main_item is None and processed_secondary_item is None:
             parts = [part.strip() for part in processed_topic.split("-", 1)]
             if len(parts) == 2:
                 processed_main_item = parts[0].strip() if parts[0] else None
@@ -258,4 +257,20 @@ class ResearchRepository:
             query = query.filter(Research.secondary_item == secondary_item)
         
         return query.order_by(Research.id).all()
+    
+    @staticmethod
+    def create(
+        db: Session,
+        primary_item: str,
+        secondary_item: str,
+    ) -> Research:
+        """Create a new research."""
+        research = Research(
+            primary_item=primary_item,
+            secondary_item=secondary_item,
+        )
+        db.add(research)
+        db.commit()
+        db.refresh(research)
+        return research
 

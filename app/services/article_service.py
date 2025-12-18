@@ -265,12 +265,26 @@ class ArticleService:
                         failed_count += 1
                         continue
                     
-                    # Process topic to extract main_item and secondary_item
-                    # The repository will handle this automatically
+                    # Read main_item and secondary_item from Excel columns (optional)
                     main_item = None
+                    if 'Main Item' in df.columns:
+                        main_item_value = row.get('Main Item')
+                        if main_item_value is not None and not (isinstance(main_item_value, float) and pd.isna(main_item_value)):
+                            main_item_str = str(main_item_value).strip()
+                            if main_item_str and main_item_str != 'nan':
+                                main_item = main_item_str
+                    
                     secondary_item = None
+                    if 'Secondary Item' in df.columns:
+                        secondary_item_value = row.get('Secondary Item')
+                        if secondary_item_value is not None and not (isinstance(secondary_item_value, float) and pd.isna(secondary_item_value)):
+                            secondary_item_str = str(secondary_item_value).strip()
+                            if secondary_item_str and secondary_item_str != 'nan':
+                                secondary_item = secondary_item_str
                     
                     # Save article to database
+                    # Note: If main_item and secondary_item are provided, they will be used
+                    # The repository will still process topic, but won't override explicitly provided values
                     ArticleRepository.create(
                         db=db,
                         title=title,

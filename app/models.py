@@ -53,13 +53,18 @@ class ArticleUploadRequest(BaseModel):
     )
 
 
-class ArticleUploadResponse(BaseModel):
-    id: int = Field(..., description="ID of the uploaded article")
+class ArticleItem(BaseModel):
+    id: int = Field(..., description="Article ID")
+    title: str = Field(..., description="Article title")
     url: str = Field(..., description="Article URL")
-    title: str | None = Field(default=None, description="Article title")
     topic: str | None = Field(default=None, description="Article topic")
+    research_id: int | None = Field(default=None, description="Research ID")
     main_item: str | None = Field(default=None, description="Main item")
     secondary_item: str | None = Field(default=None, description="Secondary item")
+
+
+class ArticleUploadResponse(BaseModel):
+    article: ArticleItem = Field(..., description="Uploaded article details")
     message: str = Field(..., description="Status message")
 
 
@@ -100,17 +105,8 @@ class HypothesisCreationResponse(BaseModel):
     )
 
 
-class ArticleListItem(BaseModel):
-    id: int = Field(..., description="Article ID")
-    title: str = Field(..., description="Article title")
-    url: str = Field(..., description="Article URL")
-    topic: str | None = Field(default=None, description="Article topic")
-    main_item: str | None = Field(default=None, description="Main item")
-    secondary_item: str | None = Field(default=None, description="Secondary item")
-
-
 class ArticleListResponse(BaseModel):
-    articles: List[ArticleListItem] = Field(
+    articles: List[ArticleItem] = Field(
         ...,
         description="List of all available articles (without content)",
     )
@@ -129,16 +125,8 @@ class ArticleBatchUploadResponse(BaseModel):
     )
 
 
-class ArticleSearchItem(BaseModel):
-    id: int = Field(..., description="Article ID")
-    title: str = Field(..., description="Article title")
-    url: str = Field(..., description="Article URL")
-    topic: str | None = Field(default=None, description="Article topic")
-    research_id: int | None = Field(default=None, description="Research ID")
-
-
 class ArticleSearchResponse(BaseModel):
-    articles: List[ArticleSearchItem] = Field(
+    articles: List[ArticleItem] = Field(
         ...,
         description="List of articles matching the search criteria",
     )
@@ -180,3 +168,13 @@ class ResearchSearchResponse(BaseModel):
         ...,
         description="List of researches matching the search criteria",
     )
+
+
+class ResearchCreateRequest(BaseModel):
+    primary_item: str = Field(..., description="Primary item")
+    secondary_item: str = Field(..., description="Secondary item")
+
+
+class ResearchCreateResponse(BaseModel):
+    research: ResearchItem = Field(..., description="Created research details")
+    message: str = Field(..., description="Status message")

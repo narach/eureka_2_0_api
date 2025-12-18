@@ -6,6 +6,8 @@ from app.models import (
     ResearchItem,
     ResearchSearchResponse,
     ResearchSearchItem,
+    ResearchCreateRequest,
+    ResearchCreateResponse,
 )
 from app.db.base import get_db
 from app.services.research_service import ResearchService
@@ -88,5 +90,41 @@ def search_researches(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to search researches: {str(e)}",
+        )
+
+
+@router.post("", response_model=ResearchCreateResponse)
+def create_research(
+    request: ResearchCreateRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Create a new research.
+    
+    - **primary_item**: Primary item (required)
+    - **secondary_item**: Secondary item (required)
+    
+    Returns the created research details.
+    """
+    try:
+        research = research_service.create_research(
+            db=db,
+            primary_item=request.primary_item,
+            secondary_item=request.secondary_item,
+        )
+        
+        return ResearchCreateResponse(
+            research=ResearchItem(
+                id=research.id,
+                primary_item=research.primary_item,
+                secondary_item=research.secondary_item,
+            ),
+            message="Research created successfully",
+        )
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create research: {str(e)}",
         )
 
